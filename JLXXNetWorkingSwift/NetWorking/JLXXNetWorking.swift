@@ -68,10 +68,10 @@ struct JLXXNetWorking {
 	
 	///先添加一个闭包用于成功时后台返回数据的回调
 	typealias successClosure = ( (String) -> (Void))
-	///失败的回调
+	///失败的回调(返回失败数据,根据返回的数据,做不同的UI处理)
 	typealias failedClosure = ( (String) -> (Void) )
-	///网络错误的回调
-	typealias failedResponseClosure = ( (String) -> (Void) )
+	///错误的回调(返回失败原因,提示错误信息)
+	typealias faultClosure = ( (String) -> (Void) )
 
 	static let shared = JLXXNetWorking()
 	
@@ -80,7 +80,7 @@ struct JLXXNetWorking {
 	private init() { }
 	
 	/// 用一个方法封装provider.request()
-	func request(_ api: JLXXApi, completion: @escaping successClosure, failed: failedClosure? = nil, failedResponse: failedResponseClosure? = nil ) {
+	func request(_ api: JLXXApi, completion: @escaping successClosure, fault: faultClosure? = nil, failed: failedClosure? = nil ) {
 		//先判断网络是否有链接 没有的话直接返回--代码略
 		
 		let target = JLXXBridgeTarget(api: api)
@@ -100,16 +100,16 @@ struct JLXXNetWorking {
 						completion(jsonString)
 					}else {
 						let message = dic[JLXXNetWorkingResMessageKey] as? String ?? "服务器返回数据错误"
-						failed?(message)
-						failedResponse?(jsonString)
+						fault?(message)
+						failed?(jsonString)
 					}
 				} catch {
-					failed?("不是json数据")
+					fault?("不是json数据")
 					debugPrint("网络返回的数据转为字典失败!!!!!")
 				}
 			case let .failure(error):
 				if let errorDescription = error.errorDescription {
-					failed?(errorDescription)
+					fault?(errorDescription)
 					debugPrint("网络请求失败:\(errorDescription)")
 				}else {
 					//网络连接失败，提示用户
